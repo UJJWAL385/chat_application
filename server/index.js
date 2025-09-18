@@ -7,7 +7,12 @@ const app = express()
 const socket = require("socket.io")
 require("dotenv").config()
 
-app.use(cors())
+app.use(cors({
+  origin: "https://chat-application-jac6.vercel.app", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json())
 
 app.use("/api/auth", userRoutes)
@@ -31,12 +36,13 @@ const server = app.listen(process.env.PORT, () => {
 })
 
 const io = socket(server, {
-    cors: {
-      origin: "https://chat-application-jac6.vercel.app",
-      credentials: true,
-    },
-  });
-  
+  cors: {
+    origin: "https://chat-application-jac6.vercel.app",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  },
+});
+
   global.onlineUsers = new Map();
   io.on("connection", (socket) => {
     global.chatSocket = socket;
