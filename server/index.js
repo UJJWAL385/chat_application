@@ -10,8 +10,8 @@ require("dotenv").config()
 app.use(cors())
 app.use(express.json())
 
-app.use("https://chat-application-7sey.vercel.app/api/auth", userRoutes)
-app.use("https://chat-application-7sey.vercel.app/api/messages", messageRoutes)
+app.use("/api/auth", userRoutes)
+app.use("/api/messages", messageRoutes)
 
 mongoose.connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
