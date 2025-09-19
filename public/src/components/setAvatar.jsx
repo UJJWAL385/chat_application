@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import axios from "axios";
-import { Buffer } from "buffer";
 import loader from "../assets/loader.gif";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { setAvatarRoute } from "../utils/APIRoutes";
 
 export default function SetAvatar() {
-  const api = "https://chat-application-8lj6.onrender.com/api/avatar";
+  const api = "https://api.multiavatar.com"; // ✅ use external avatar API
   const navigate = useNavigate();
   const [avatars, setAvatars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +26,7 @@ export default function SetAvatar() {
     if (!localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
       navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   const setProfilePicture = async () => {
     if (selectedAvatar === undefined) {
@@ -64,14 +63,12 @@ export default function SetAvatar() {
       const data = [];
       for (let i = 0; i < 4; i++) {
         try {
-          // const image = await axios.get(`${api}/${Math.round(Math.random() * 1000)}`);
-          // const buffer = new Buffer(image.data);
-          // data.push(buffer.toString("base64"));
           const id = Math.round(Math.random() * 1000);
-          const response = await axios.get(`${api}/${id}`); 
-          // response.data is raw SVG
+          const response = await axios.get(`${api}/${id}`, {
+            responseType: "text", // ✅ get raw SVG
+          });
           const svg = response.data;
-          data.push(btoa(svg));  // convert SVG to base64
+          data.push(btoa(svg)); // convert SVG string → base64
         } catch (error) {
           console.error(error);
         }
@@ -84,7 +81,7 @@ export default function SetAvatar() {
 
   return (
     <>
-      {isLoading? (
+      {isLoading ? (
         <Container>
           <img src={loader} alt="loader" className="loader" />
         </Container>
@@ -97,14 +94,14 @@ export default function SetAvatar() {
             {avatars.map((avatar, index) => {
               return (
                 <div
+                  key={index}
                   className={`avatar ${
-                    selectedAvatar === index? "selected" : ""
+                    selectedAvatar === index ? "selected" : ""
                   }`}
                 >
                   <img
                     src={`data:image/svg+xml;base64,${avatar}`}
                     alt="avatar"
-                    key={avatar}
                     onClick={() => setSelectedAvatar(index)}
                   />
                 </div>
@@ -131,16 +128,16 @@ const Container = styled.div`
   height: 100vh;
   width: 100vw;
 
- .loader {
+  .loader {
     max-inline-size: 100%;
   }
 
- .title-container {
+  .title-container {
     h1 {
       color: white;
     }
   }
- .avatars {
+  .avatars {
     display: flex;
     gap: 2rem;
 
@@ -155,6 +152,7 @@ const Container = styled.div`
       img {
         height: 6rem;
         transition: 0.5s ease-in-out;
+        cursor: pointer;
       }
     }
     .selected {
