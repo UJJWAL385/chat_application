@@ -8,6 +8,21 @@ require("dotenv").config();
 
 const app = express();
 
+const axios = require("axios");
+
+app.get("/api/avatar/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await axios.get(`https://api.multiavatar.com/${id}`, {
+      responseType: "text",
+    });
+    res.send(response.data); // Send raw SVG back to frontend
+  } catch (err) {
+    res.status(500).send("Error fetching avatar");
+  }
+});
+
+
 // ======================
 // CORS Configuration
 // ======================
