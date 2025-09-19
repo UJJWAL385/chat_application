@@ -1,28 +1,27 @@
+// routes/userRoutes.js
+const express = require('express');
+const { register, login, setAvatar, getAllUsers, logOut } = require('../controllers/userController');
+const axios = require('axios');
+const router = express.Router();
 
-const { register, login, setAvatar, getAllUsers, logOut} = require('../controllers/userController') 
+router.post('/register', register);
+router.post('/login', login);
+router.post('/setavatar/:id', setAvatar);
+router.get('/allusers/:id', getAllUsers);
+router.get('/logout/:id', logOut);
 
-const router = require('express').Router()
-
-router.post('/register', register)
-router.post('/login', login)
-router.post('/setavatar/:id', setAvatar)
-
-router.get('/allusers/:id', getAllUsers)
-router.get("/logout/:id", logOut)
-
-// ✅ NEW avatar route
-router.get("/avatar/:id", async (req, res) => {
+// --------- New avatar proxy route ---------
+router.get('/avatar/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const response = await axios.get(`https://api.multiavatar.com/${id}`, {
-      responseType: "text",
+      responseType: 'text', // raw SVG
     });
-    res.set("Content-Type", "image/svg+xml");
+    res.setHeader('Content-Type', 'image/svg+xml');
     res.send(response.data);
   } catch (err) {
-    console.error("Avatar fetch error:", err.message);
-    res.status(500).send("Error fetching avatar");
+    res.status(500).send('Error fetching avatar');
   }
 });
 
-module.exports = router
+module.exports = router;

@@ -7,6 +7,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { setAvatarRoute, avatarRoute } from "../utils/APIRoutes"; // ✅ import both
 
+const api = "https://chat-application-8lj6.onrender.com/api/auth/avatar"; // ✅ proxy
+const response = await axios.get(`${api}/${id}`, { responseType: 'text' });
+
+
 export default function SetAvatar() {
   const navigate = useNavigate();
   const [avatars, setAvatars] = useState([]);
