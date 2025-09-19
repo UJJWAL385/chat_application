@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { setAvatarRoute } from "../utils/APIRoutes";
 
 export default function SetAvatar() {
-  const api = `${process.env.REACT_APP_BACKEND_URL}/api/avatar`;
+  const api = "https://chat-application-8lj6.onrender.com/api/avatar";
   const navigate = useNavigate();
   const [avatars, setAvatars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,9 +64,14 @@ export default function SetAvatar() {
       const data = [];
       for (let i = 0; i < 4; i++) {
         try {
-          const image = await axios.get(`${api}/${Math.round(Math.random() * 1000)}`);
-          const buffer = new Buffer(image.data);
-          data.push(buffer.toString("base64"));
+          // const image = await axios.get(`${api}/${Math.round(Math.random() * 1000)}`);
+          // const buffer = new Buffer(image.data);
+          // data.push(buffer.toString("base64"));
+          const id = Math.round(Math.random() * 1000);
+          const response = await axios.get(`${api}/${id}`); 
+          // response.data is raw SVG
+          const svg = response.data;
+          data.push(btoa(svg));  // convert SVG to base64
         } catch (error) {
           console.error(error);
         }
