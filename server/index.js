@@ -12,7 +12,7 @@ const app = express();
 // CORS Configuration
 // ======================
 const corsOptions = {
-  origin: "https://splendorous-puffpuff-7eea4b.netlify.app/", // frontend URL
+  origin: "https://chat-application-seal.vercel.app/", // frontend URL
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -64,7 +64,7 @@ const server = app.listen(process.env.PORT, () => {
 // ======================
 const io = socket(server, {
   cors: {
-    origin: "https://splendorous-puffpuff-7eea4b.netlify.app/",
+    origin: "https://chat-application-seal.vercel.app/",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
