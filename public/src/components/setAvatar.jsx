@@ -68,11 +68,8 @@ export default function SetAvatar() {
     const generateAvatars = () => {
       const avatarData = [];
       for (let i = 0; i < 4; i++) {
-        // Generate a random avatar ID
-        const randomId = Math.floor(Math.random() * 1000).toString();
-        // Generate SVG using multiavatar
-        const svgCode = multiavatar(randomId);
-        // Convert SVG to Base64
+        // Generate SVG locally, no HTTP requests
+        const svgCode = multiavatar(Math.floor(Math.random() * 1000).toString());
         const base64 = Buffer.from(svgCode).toString("base64");
         avatarData.push(base64);
       }
