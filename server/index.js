@@ -1,17 +1,18 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const userRoutes = require('./routes/userRoutes');
+const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messages");
 const socket = require("socket.io");
 require("dotenv").config();
 
 const app = express();
-
 const axios = require("axios");
 
-
-
+// ======================
+// Middleware
+// ======================
+app.use(express.json());
 
 // ======================
 // CORS Configuration
@@ -23,16 +24,7 @@ const corsOptions = {
   credentials: true,
 };
 
-// Apply CORS to all REST API routes
 app.use(cors(corsOptions));
-
-// Handle preflight requests for all routes
-app.options("*", cors(corsOptions));
-
-// ======================
-// Middleware
-// ======================
-app.use(express.json());
 
 // ======================
 // Routes
@@ -57,17 +49,23 @@ app.get("/ping", (_req, res) => {
   return res.json({ msg: "Ping Successful" });
 });
 
+// Handle preflight requests for all routes (important for /api/auth/*)
+app.options("*", cors(corsOptions));
+
 // ======================
 // MongoDB Connection
 // ======================
-mongoose.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log("Connected to MongoDB");
-}).catch((err) => {
-  console.log(err.message);
-});
+mongoose
+  .connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.log(err.message);
+  });
 
 // ======================
 // Start Server
@@ -104,6 +102,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    // Optional: remove user from onlineUsers map if needed
+    // Optional: cleanup user from onlineUsers map
   });
 });
