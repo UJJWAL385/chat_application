@@ -1,100 +1,117 @@
+// index.js
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messages");
-const socket = require("socket.io");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
 const app = express();
 
-// ======================
-// Middleware
-// ======================
-app.use(express.json());
+// --------- Basic settings ---------
+app.set("trust proxy", 1); // important on hosted platforms (Render, Vercel proxies, etc.)
 
-// ======================
-// CORS Configuration
-// ======================
+// --------- Middleware ---------
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// --------- CORS (allow production + local dev) ---------
+const ALLOWED_ORIGINS = [
+  "https://chat-application-jac6.vercel.app", // your deployed frontend
+  "http://localhost:3000", // local dev (optional)
+];
+
 const corsOptions = {
-  origin: [
-    "https://chat-application-jac6.vercel.app", // deployed frontend
-    "http://localhost:3000", // allow local dev too (optional)
-  ],
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error("CORS policy: Origin not allowed"));
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  credentials: true, // enable Access-Control-Allow-Credentials
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // preflight handling
+app.options("*", cors(corsOptions)); // handle preflight requests
 
-// ======================
-// Routes
-// ======================
+// --------- Routes ---------
 app.use("/api/auth", userRoutes);
 app.use("/api/messages", messageRoutes);
 
-// ✅ Removed `/api/avatar/:id` route (frontend calls Multiavatar directly)
+app.get("/ping", (_req, res) => res.json({ msg: "Ping Successful" }));
 
-// Simple ping route
-app.get("/ping", (_req, res) => {
-  return res.json({ msg: "Ping Successful" });
+// --------- 404 + Error handlers ---------
+app.use((req, res) => {
+  res.status(404).json({ error: "Not Found" });
 });
 
-// ======================
-// MongoDB Connection
-// ======================
-mongoose
-  .connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("✅ Connected to MongoDB");
-  })
-  .catch((err) => {
-    console.log("❌ MongoDB Error:", err.message);
-  });
-
-// ======================
-// Start Server
-// ======================
-const server = app.listen(process.env.PORT, () => {
-  console.log(`🚀 Server Started on Port ${process.env.PORT}`);
+app.use((err, req, res, next) => {
+  console.error("Server error:", err && (err.stack || err.message));
+  if ((err && err.message && err.message.includes("CORS")) || err.name === "CorsError") {
+    return res.status(401).json({ error: "CORS Error" });
+  }
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
-// ======================
-// Socket.io Setup
-// ======================
-const io = socket(server, {
-  cors: {
-    origin: [
-      "https://chat-application-jac6.vercel.app",
-      "http://localhost:3000",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
-});
+// --------- Start server after DB connection ---------
+const PORT = process.env.PORT || 5000;
 
-global.onlineUsers = new Map();
-
-io.on("connection", (socket) => {
-  global.chatSocket = socket;
-
-  socket.on("add-user", (userId) => {
-    onlineUsers.set(userId, socket.id);
-  });
-
-  socket.on("send-msg", (data) => {
-    const sendUserSocket = onlineUsers.get(data.to);
-    if (sendUserSocket) {
-      socket.to(sendUserSocket).emit("msg-recieve", data.msg);
+async function start() {
+  try {
+    if (!process.env.MONGO_URL) {
+      console.warn("Warning: MONGO_URL is not set. Database will fail to connect.");
     }
-  });
+    await mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("✅ Connected to MongoDB");
 
-  socket.on("disconnect", () => {
-    // Optional: cleanup user from onlineUsers map
-  });
-});
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Server started on port ${PORT}`);
+    });
+
+    // --------- socket.io setup ---------
+    const io = new Server(server, {
+      cors: {
+        origin: ALLOWED_ORIGINS,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
+      },
+    });
+
+    global.onlineUsers = new Map();
+
+    io.on("connection", (socket) => {
+      global.chatSocket = socket;
+
+      socket.on("add-user", (userId) => {
+        onlineUsers.set(userId, socket.id);
+      });
+
+      socket.on("send-msg", (data) => {
+        const sendUserSocket = onlineUsers.get(data.to);
+        if (sendUserSocket) {
+          socket.to(sendUserSocket).emit("msg-recieve", data.msg);
+        }
+      });
+
+      socket.on("disconnect", () => {
+        // optional cleanup if you store reverse map
+      });
+    });
+
+    // optional: handle unexpected rejections
+    process.on("unhandledRejection", (reason) => {
+      console.error("Unhandled Rejection:", reason);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err && (err.stack || err.message));
+    process.exit(1);
+  }
+}
+
+start();

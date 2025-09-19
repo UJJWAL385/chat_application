@@ -5,10 +5,9 @@ import loader from "../assets/loader.gif";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
-import { setAvatarRoute } from "../utils/APIRoutes";
+import { setAvatarRoute, avatarRoute } from "../utils/APIRoutes"; // ✅ import both
 
 export default function SetAvatar() {
-  const api = "https://api.multiavatar.com"; // ✅ use external avatar API
   const navigate = useNavigate();
   const [avatars, setAvatars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +53,7 @@ export default function SetAvatar() {
         }
       } catch (error) {
         console.error(error);
+        toast.error("Server error while setting avatar", toastOptions);
       }
     }
   };
@@ -64,13 +64,13 @@ export default function SetAvatar() {
       for (let i = 0; i < 4; i++) {
         try {
           const id = Math.round(Math.random() * 1000);
-          const response = await axios.get(`${api}/${id}`, {
-            responseType: "text", // ✅ get raw SVG
+          const response = await axios.get(`${avatarRoute}/${id}`, {
+            responseType: "text", // raw SVG string from backend
           });
           const svg = response.data;
-          data.push(btoa(svg)); // convert SVG string → base64
+          data.push(btoa(svg)); // convert SVG → base64
         } catch (error) {
-          console.error(error);
+          console.error("Error fetching avatar:", error);
         }
       }
       setAvatars(data);
